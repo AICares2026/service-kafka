@@ -1,0 +1,20 @@
+service:
+  name: kafka
+image:
+  repository: 952893849914.dkr.ecr.us-east-1.amazonaws.com/aicares-application/kafka
+containerPort: 9092
+resources:
+  limits:
+    memory: "500Mi"
+  requests:
+    memory: "128Mi"
+    cpu: "100m"
+env:
+  - name: KAFKA_ADVERTISED_LISTENERS
+    value: "PLAINTEXT://kafka:9092"
+  - name: OTEL_SERVICE_NAME
+    value: "kafka"
+  - name: OTEL_EXPORTER_OTLP_ENDPOINT
+    value: "http://otel-collector:4317"
+nodeSelector:
+  eks.amazonaws.com/nodegroup: graviton-workers
