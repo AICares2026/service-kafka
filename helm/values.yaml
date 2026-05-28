@@ -8,10 +8,10 @@ image:
 containerPort: 9092
 resources:
   limits:
-    memory: "500Mi"
+    memory: "1Gi"
   requests:
-    memory: "128Mi"
-    cpu: "100m"
+    memory: "512Mi"
+    cpu: "200m"
 env:
   - name: KAFKA_CONTROLLER_QUORUM_VOTERS
     value: "1@localhost:9093"
