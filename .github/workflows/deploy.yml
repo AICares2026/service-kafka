@@ -41,8 +41,8 @@ jobs:
             --build-arg BUILDPLATFORM=linux/amd64 \
             --build-arg OTEL_JAVA_AGENT_VERSION=2.25.0 \
             --build-arg TARGETARCH=arm64 \
-            -t ${{ env.ECR_REGISTRY }}/${{ env.ECR_REPO }}/${{ env.SERVICE_NAME }}:${{ github.sha }} .
-          docker push ${{ env.ECR_REGISTRY }}/${{ env.ECR_REPO }}/${{ env.SERVICE_NAME }}:${{ github.sha }}
+            -t ${{ env.ECR_REGISTRY }}/${{ env.ECR_REPO }}/${{ env.SERVICE_NAME }}:${{ github.sha }} . \
+            --push
 
       - name: Update kubeconfig
         run: aws eks update-kubeconfig --name ${{ env.CLUSTER_NAME }} --region ${{ env.AWS_REGION }}
