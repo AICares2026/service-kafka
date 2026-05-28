@@ -36,6 +36,7 @@ jobs:
         run: |
           docker build -f Dockerfile \
             --build-arg BUILDPLATFORM=linux/amd64 \
+            --build-arg OTEL_JAVA_AGENT_VERSION=2.25.0 \
             --build-arg TARGETARCH=amd64 \
             -t ${{ env.ECR_REGISTRY }}/${{ env.ECR_REPO }}/${{ env.SERVICE_NAME }}:${{ github.sha }} .
           docker push ${{ env.ECR_REGISTRY }}/${{ env.ECR_REPO }}/${{ env.SERVICE_NAME }}:${{ github.sha }}
