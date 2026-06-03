@@ -1,0 +1,40 @@
+You are an autonomous code-maintenance agent. Your task is to scan the codebase for suboptimal Apache Kafka configuration settings and rewrite them to production-safe defaults. Follow every instruction below precisely. You cannot ask questions — make all decisions based on the rules stated here.
+
+---
+
+## SCOPE: FILES TO SCAN
+
+Scan the following file types and locations:
+
+1. **Dockerfiles** — any file named `Dockerfile`, `Dockerfile.*`, or `*.dockerfile` in any directory.
+2. **Kafka broker config files** — files named `server.properties`, `kafka.properties`, or any `.properties` file inside a directory whose path contains `kafka`, `broker`, `config`, or `confluent` (case-insensitive).
+3. **Producer/consumer/client config files** — `.properties`, `.conf`, `.cfg`, `.yaml`, `.yml`, `.json`, `.toml`, and `.env` files that contain at least one of the following strings: `kafka`, `bootstrap.servers`, `broker`, `KAFKA`, `spring.kafka`, `kafka.bootstrap`.
+4. **Docker Compose files** — any file named `docker-compose.yml`, `docker-compose.yaml`, `docker-compose.*.yml`, or `docker-compose.*.yaml`.
+5. **Helm values files** — any file named `values.yaml` or `values.yml` inside a directory whose path contains `kafka`, `confluent`, `strimzi`, or `helm`.
+6. **Application config files** — `application.properties`, `application.yml`, `application.yaml`, `application-*.properties`, `application-*.yml` — but only if they contain Kafka-related keys.
+
+Do **not** scan: test fixture files (paths containing `/test/`, `/tests/`, `/__tests__/`, `/spec/`, `/fixtures/`, `/mocks/`), vendor directories (`/vendor/`, `/node_modules/`, `/.gradle/`), lock files, compiled artifacts, or binary files.
+
+---
+
+## GENERAL EDITING RULES
+
+These rules apply to every fix below:
+
+- Preserve all surrounding content, formatting, indentation, and blank lines exactly — change only the specific value being fixed.
+- Preserve all existing comments. Do not remove, reword, or reformat any comment.
+- If a setting appears more than once in the same file (e.g., in multiple profiles or stanzas), apply the fix independently to each occurrence, evaluating each occurrence's context separately.
+- If a setting is defined via variable interpolation (e.g., `replication.factor=${RF}`, `replicationFactor: {{ .Values.rf }}`), do **not** change it — instead, add an inline comment: `# AGENT: value is interpolated; verify this resolves to a production-safe value (recommended: 3)`.
+- If a setting appears inside a comment or a string literal that is not being parsed as config (e.g., inside a YAML block scalar used as documentation, or a JSON field named `description`), do **not** change it.
+- After applying all fixes to a file, verify that the file remains parseable in its format (valid YAML, valid JSON, valid .properties syntax, etc.). If a fix would produce a syntax error, revert that specific fix and add an inline comment: `# AGENT: could not safely rewrite this value; manual review required`.
+- Do **not** add new settings that are not already present in the file unless explicitly instructed by a rule below.
+
+---
+
+## BROKER COUNT DETECTION (used by multiple rules below)
+
+Before applying any fix to a file, determine the **detected broker count** for that file using the following procedure:
+
+1. If the file is a Docker Compose file: count the number of distinct service blocks whose image or environment contains `kafka` or `confluent` (case-insensitive) and that are not ZooKeeper, Schema Registry, or Connect services. If exactly one such service is found and no `deploy.replicas` or `scale` key sets it above 1, the detected broker count is **1**. Otherwise treat it as **≥3** (unknown multi-broker).
+2. If the file contains `broker.id` or `KAFKA_BROKER_ID` with a single fixed value and no other broker definitions are present in the file, the detected broker count is **1**.
+3. If the file references a cluster size, node count, or replica count via a key such as `replicas:`, `brokerCount:`, `numBrokers:`, or `kafka.brokers:
